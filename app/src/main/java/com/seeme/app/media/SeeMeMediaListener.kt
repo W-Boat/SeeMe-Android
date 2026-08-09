@@ -19,6 +19,20 @@ class SeeMeMediaListener : NotificationListenerService() {
             private set
 
         private const val TAG = "Media"
+
+        private val MEDIA_PACKAGES = setOf(
+            "com.spotify.music",
+            "com.netease.cloudmusic",
+            "com.tencent.qqmusic",
+            "com.kugou.android",
+            "com.miui.player",
+            "com.google.android.youtube",
+            "com.google.android.apps.youtube.music",
+            "com.bilibili.app.blue",
+            "com.zhiliaoapp.musically",
+            "tv.danmaku.bili",
+            "com.kuaishou.nebula",
+        )
     }
 
     override fun onListenerConnected() {
@@ -52,21 +66,5 @@ class SeeMeMediaListener : NotificationListenerService() {
     override fun onDestroy() {
         isEnabled = false
         super.onDestroy()
-    }
-
-    private companion object {
-        val MEDIA_PACKAGES = setOf(
-            "com.spotify.music",
-            "com.netease.cloudmusic",
-            "com.tencent.qqmusic",
-            "com.kugou.android",
-            "com.miui.player",
-            "com.google.android.youtube",
-            "com.google.android.apps.youtube.music",
-            "com.bilibili.app.blue",
-            "com.zhiliaoapp.musically",
-            "tv.danmaku.bili",
-            "com.kuaishou.nebula",
-        )
     }
 }
