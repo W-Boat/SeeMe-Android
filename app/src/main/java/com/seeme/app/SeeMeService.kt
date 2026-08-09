@@ -20,6 +20,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.seeme.app.a11y.SeeMeAccessibilityService
 import com.seeme.app.config.Config
 import com.seeme.app.reporter.Reporter
 import org.json.JSONObject
@@ -51,7 +52,7 @@ class SeeMeService : Service() {
         @Volatile var inputState: String = "unknown"
 
         /** 上次上报内容的快照，用于事件去重 */
-        private val lastReported = JSONObject()
+        private var lastReported = JSONObject()
 
         @Synchronized
         fun setForeground(pkg: String, label: String, activity: String?) {
@@ -174,7 +175,7 @@ class SeeMeService : Service() {
     // ---------- UsageStats 兜底 ----------
 
     private fun usageStatsFallback() {
-        if (a11y.SeeMeAccessibilityService.isActive) return
+        if (SeeMeAccessibilityService.isActive) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
         if (checkSelfPermission(android.Manifest.permission.PACKAGE_USAGE_STATS)
             != PackageManager.PERMISSION_GRANTED
