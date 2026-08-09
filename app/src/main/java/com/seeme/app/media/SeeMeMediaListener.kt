@@ -46,7 +46,6 @@ class SeeMeMediaListener : NotificationListenerService() {
     private fun isMediaNotification(sbn: StatusBarNotification): Boolean {
         val n = sbn.notification ?: return false
         return n.category == Notification.CATEGORY_TRANSPORT ||
-            n.category == Notification.CATEGORY_MEDIA ||
             sbn.packageName in MEDIA_PACKAGES
     }
 
