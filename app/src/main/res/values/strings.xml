@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SeeMe</string>
+    <string name="accessibility_label">SeeMe 采集</string>
+    <string name="accessibility_description">用于采集当前前台应用与输入状态（键盘弹出），数据仅上传到你配置的服务器</string>
+    <string name="notif_channel">seeme_status</string>
+    <string name="notif_channel_name">SeeMe 采集服务</string>
+    <string name="notif_title">SeeMe 正在视奸你</string>
+    <string name="notif_text">电量 %1$d%% · %2$s</string>
+    <string name="device_info">设备 ID: %1$s\n设备名: %2$s</string>
+</resources>

@@ -1,0 +1,14 @@
+# SeeMe Magisk 模块
+
+id=seeme_privapp
+name=SeeMe priv-app
+version=v0.1.0
+versionCode=1
+author=SeeMe
+description=Install SeeMe as a system priv-app for root keep-alive
+
+# 直接放置 apk 到 system/priv-app
+SKIPMOUNT=false
+PROPFILE=false
+POSTFSDATA=false
+LATESTARTSERVICE=false
