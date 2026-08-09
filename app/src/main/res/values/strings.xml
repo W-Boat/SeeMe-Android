@@ -8,4 +8,19 @@
     <string name="notif_title">SeeMe 正在视奸你</string>
     <string name="notif_text">电量 %1$d%% · %2$s</string>
     <string name="device_info">设备 ID: %1$s\n设备名: %2$s</string>
+    <string name="media_listener_label">SeeMe 媒体监听</string>
+    <string name="status_label">自定义在线状态（借鉴 sleepy，留空不显示）</string>
+    <string name="status_hint">例如：在忙 / 睡觉 / 摸鱼中…</string>
+    <string name="save_status">保存状态</string>
+    <string name="root_section">Root 管理（保活/自启增强）</string>
+    <string name="check_root">检测 Root</string>
+    <string name="request_root">请求 Root 授权</string>
+    <string name="install_system">安装为系统应用（priv-app）</string>
+    <string name="media_section">媒体状态上报（借鉴 SleepyXposed）</string>
+    <string name="media_enabled">上报正在播放的媒体（标题/艺术家）</string>
+    <string name="grant_media">授予通知访问权限</string>
+    <string name="hide_icon">隐藏桌面图标（需 root/系统应用）</string>
+    <string name="log_section">运行日志</string>
+    <string name="refresh_log">刷新</string>
+    <string name="clear_log">清空</string>
 </resources>

@@ -35,6 +35,8 @@ class Reporter(
         foregroundApp: String?,
         foregroundActivity: String?,
         inputState: String?,
+        statusText: String? = null,
+        mediaTitle: String? = null,
         onResult: (Boolean) -> Unit = {},
     ) {
         val body = JSONObject().apply {
@@ -50,6 +52,8 @@ class Reporter(
             if (foregroundApp != null) put("foregroundApp", foregroundApp)
             if (foregroundActivity != null) put("foregroundActivity", foregroundActivity)
             if (inputState != null) put("inputState", inputState)
+            if (statusText != null) put("statusText", statusText)
+            if (mediaTitle != null) put("mediaTitle", mediaTitle)
         }.toString()
 
         val request = Request.Builder()

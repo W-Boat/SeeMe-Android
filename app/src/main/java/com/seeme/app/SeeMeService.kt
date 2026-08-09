@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import com.seeme.app.a11y.SeeMeAccessibilityService
 import com.seeme.app.config.Config
 import com.seeme.app.reporter.Reporter
+import com.seeme.app.util.LogBuffer
 import org.json.JSONObject
 
 /**
@@ -42,6 +43,7 @@ class SeeMeService : Service() {
 
         const val ACTION_START = "com.seeme.app.action.START"
         const val ACTION_STOP = "com.seeme.app.action.STOP"
+        const val ACTION_REPORT = "com.seeme.app.action.REPORT"
 
         // ---- 全局采集状态（AccessibilityService / UI 读写） ----
         @Volatile var batteryLevel: Int = -1
@@ -50,6 +52,7 @@ class SeeMeService : Service() {
         @Volatile var foregroundApp: String? = null
         @Volatile var foregroundActivity: String? = null
         @Volatile var inputStateValue: String = "unknown"
+        @Volatile var mediaTitleValue: String? = null
 
         /** 上次上报内容的快照，用于事件去重 */
         private var lastReported = JSONObject()
@@ -66,6 +69,15 @@ class SeeMeService : Service() {
         fun setInputState(state: String) {
             if (inputStateValue != state) {
                 inputStateValue = state
+                markChanged()
+            }
+        }
+
+        /** 媒体标题（由媒体监听写入；null 表示无播放） */
+        @Synchronized
+        fun setMediaTitle(title: String?) {
+            if (mediaTitleValue != title) {
+                mediaTitleValue = title
                 markChanged()
             }
         }
@@ -89,6 +101,11 @@ class SeeMeService : Service() {
 
         fun stop(context: Context) {
             context.startService(Intent(context, SeeMeService::class.java).setAction(ACTION_STOP))
+        }
+
+        /** 立即上报一次（例如自定义状态保存后） */
+        fun triggerReport(context: Context) {
+            context.startService(Intent(context, SeeMeService::class.java).setAction(ACTION_REPORT))
         }
     }
 
@@ -121,9 +138,12 @@ class SeeMeService : Service() {
         createNotificationChannel()
         registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 
-        // 无障碍服务写入状态后触发上报
+        // 无障碍/媒体状态写入后触发上报与通知刷新
         setChangeListener {
-            handler.post { report() }
+            handler.post {
+                report()
+                updateNotification()
+            }
         }
 
         // 启动前台通知
@@ -131,7 +151,7 @@ class SeeMeService : Service() {
         startForeground(NOTIF_ID, buildNotification())
 
         handler.post(heartbeat)
-        Log.i(TAG, "service started")
+        LogBuffer.log(TAG, "service started")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -140,12 +160,16 @@ class SeeMeService : Service() {
                 stopSelf()
                 return START_NOT_STICKY
             }
+            ACTION_REPORT -> {
+                report()
+            }
             else -> {
                 // ACTION_START / 重启恢复：重读配置
                 reporter = Reporter(Config.serverUrl(this), Config.authToken(this))
                 readBattery()
             }
         }
+        LogBuffer.log(TAG, "onStartCommand: ${intent?.action ?: "restart"}")
         return START_STICKY
     }
 
@@ -153,7 +177,7 @@ class SeeMeService : Service() {
         setChangeListener(null)
         handler.removeCallbacksAndMessages(null)
         runCatching { unregisterReceiver(batteryReceiver) }
-        Log.i(TAG, "service destroyed")
+        LogBuffer.log(TAG, "service destroyed")
         super.onDestroy()
     }
 
@@ -215,6 +239,8 @@ class SeeMeService : Service() {
             put("foregroundApp", foregroundApp ?: "")
             put("foregroundActivity", foregroundActivity ?: "")
             put("inputState", inputStateValue)
+            put("statusText", Config.statusText(this@SeeMeService))
+            put("mediaTitle", if (Config.mediaEnabled(this@SeeMeService)) mediaTitleValue ?: "" else "")
         }
         if (state.toString() == lastReported.toString()) {
             // 无变化：心跳仍维持在线，但跳过重复上报
@@ -229,6 +255,8 @@ class SeeMeService : Service() {
             foregroundApp = foregroundApp,
             foregroundActivity = foregroundActivity,
             inputState = inputStateValue,
+            statusText = Config.statusText(this).ifEmpty { null },
+            mediaTitle = if (Config.mediaEnabled(this)) mediaTitleValue else null,
         ) { success ->
             if (success) {
                 synchronized(this) {
@@ -261,22 +289,36 @@ class SeeMeService : Service() {
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE,
         )
-        val text = if (batteryLevel >= 0) {
-            getString(
-                com.seeme.app.R.string.notif_text,
-                batteryLevel,
-                if (charging) "充电中" else "未充电",
+        val detail = buildString {
+            append("电量 ").append(if (batteryLevel >= 0) "$batteryLevel%" else "未知")
+            append(if (charging) " · 充电中" else " · 未充电")
+            append("\n前台: ").append(foregroundApp ?: "未知")
+            if (foregroundActivity != null) {
+                append("\n").append(foregroundActivity)
+            }
+            append("\n输入: ").append(
+                when (inputStateValue) {
+                    "typing" -> "输入中"
+                    "idle" -> "空闲"
+                    else -> "未知"
+                }
             )
-        } else {
-            "正在采集…"
+            if (mediaTitleValue != null) {
+                append("\n🎵 ").append(mediaTitleValue)
+            }
         }
         return NotificationCompat.Builder(this, getString(com.seeme.app.R.string.notif_channel))
             .setSmallIcon(com.seeme.app.R.drawable.ic_launcher_foreground)
             .setContentTitle(getString(com.seeme.app.R.string.notif_title))
-            .setContentText(text)
+            .setContentText(
+                if (batteryLevel >= 0) "$batteryLevel% · ${foregroundApp ?: "未知"}"
+                else "正在采集…"
+            )
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
     }
 
