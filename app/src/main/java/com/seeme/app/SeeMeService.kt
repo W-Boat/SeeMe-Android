@@ -49,7 +49,7 @@ class SeeMeService : Service() {
         @Volatile var foregroundAppPkg: String? = null
         @Volatile var foregroundApp: String? = null
         @Volatile var foregroundActivity: String? = null
-        @Volatile var inputState: String = "unknown"
+        @Volatile var inputStateValue: String = "unknown"
 
         /** 上次上报内容的快照，用于事件去重 */
         private var lastReported = JSONObject()
@@ -64,21 +64,21 @@ class SeeMeService : Service() {
 
         @Synchronized
         fun setInputState(state: String) {
-            if (inputState != state) {
-                inputState = state
+            if (inputStateValue != state) {
+                inputStateValue = state
                 markChanged()
             }
         }
 
-        private var changeListener: (() -> Unit)? = null
+        private var changeListenerRef: (() -> Unit)? = null
 
         @Synchronized
         fun setChangeListener(listener: (() -> Unit)?) {
-            changeListener = listener
+            changeListenerRef = listener
         }
 
         private fun markChanged() {
-            changeListener?.invoke()
+            changeListenerRef?.invoke()
         }
 
         fun start(context: Context) {
@@ -214,7 +214,7 @@ class SeeMeService : Service() {
             put("charging", charging)
             put("foregroundApp", foregroundApp ?: "")
             put("foregroundActivity", foregroundActivity ?: "")
-            put("inputState", inputState)
+            put("inputState", inputStateValue)
         }
         if (state.toString() == lastReported.toString()) {
             // 无变化：心跳仍维持在线，但跳过重复上报
@@ -228,7 +228,7 @@ class SeeMeService : Service() {
             charging = if (level != null) charging else null,
             foregroundApp = foregroundApp,
             foregroundActivity = foregroundActivity,
-            inputState = inputState,
+            inputState = inputStateValue,
         ) { success ->
             if (success) {
                 synchronized(this) {
